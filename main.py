@@ -8,7 +8,7 @@ import json
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from src.spec import OceanHR
+from src.com.spec import OceanHR
 
 # p = psutil.Process(os.getpid())
 # p.cpu_affinity([0])
