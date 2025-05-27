@@ -1,5 +1,5 @@
 # OOSpec_Control
-Control scripts for OceanOptics spectrometers.
+Control scripts for OceanOptics spectrometers. If connected through OceanView it does not work!!!
 
 For manual measurement just type:
 
