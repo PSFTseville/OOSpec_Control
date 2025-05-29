@@ -4,81 +4,92 @@ import matplotlib.animation as animation
 import json
 import os
 
-
-def load_data(file_path):
-    """
-    Load the spectra data from a JSON file.
-
-    Parameters:
-    - file_path: Path to the JSON file containing the spectra data.
-
-    Returns:
-    - data: Dictionary containing 'wave', 'spectra', and 'time'.
-    """
-    with open(file_path, 'r') as f:
-        data = json.load(f)
-    return data
-
-
-def animate_spectra(data, shot_number=None, save_path=None):
-    """
-    Create an animation of the spectra data.
-
-    Parameters:
-    - data: Dictionary containing 'wave', 'spectra', and 'time'.
-    - shot_number: Optional shot number for labeling.
-    - save_path: Optional path to save the animation.
-    """
-    wavelengths = np.array(data['wave'])
-    spectra = np.array(data['spectra']['2'])
-    time_array = data['time']
-
-    # Normalize spectra by subtracting the first spectrum
-    spectra = spectra - spectra[0, :]
-
-    fig, ax = plt.subplots()
-    line, = ax.plot([], [], lw=2)
-
-    ax.set_xlim(800, 900)
-    ax.set_ylim(np.min(spectra), np.max(spectra))
-    ax.set_xlabel(r'$\lambda$ (nm)')
-    ax.set_ylabel('Counts')
-    ax.set_yscale('log')
-
-    if shot_number is not None:
-        ax.set_title(f'Shot Number: {shot_number}')
-
-    time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
-
-    def init():
-        line.set_data([], [])
-        time_text.set_text('')
-        return line, time_text
-
-    def update(frame):
-        line.set_data(wavelengths, spectra[frame])
-        time_text.set_text(f'Time = {time_array[frame]} ms')
-        return line, time_text
-
-    ani = animation.FuncAnimation(fig, update, frames=len(spectra),
-                                  init_func=init, blit=True, interval=200)
-
-    if save_path:
-        ani.save(save_path, writer='ffmpeg')
-        print(f"Animation saved to {save_path}")
-
-    plt.show()
-    return ani
+from peaks.load_NIST import load_NIST_data
+from scipy.signal import find_peaks
+from aniplot import load_data, load_shot
+from peaks.check import multimax, compare_peaks_with_nist
 
 
 if __name__ == "__main__":
-    # Example usage
+
     path_spectrometer = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path_shots = os.path.join(path_spectrometer, 'Shots')
 
-    shot_number = '000098'
-    file_path = os.path.join(path_shots, f'{shot_number}.json')
+    shot_number=["000100"]
+    data_list = []
+    for shot in shot_number:
+        data = load_shot(shot, path_shots)
+        data_list.append(data)
+    
+    # Get the maximum spectrum across all shots
+    max_spectra = multimax(data_list)
+    
 
-    data = load_data(file_path)
-    animate_spectra(data, shot_number=shot_number)
+    
+    #Find peaks in the maximum spectrum
+    shot_index = 0 # Change this to select a specific shot
+    height_threshold = 0.005 * np.max(max_spectra['spectra'][shot_index])  # Adjust height threshold as needed
+    print(f"Analyzing peaks for shot {shot_number[shot_index]}")
+    peaks, _ = find_peaks(max_spectra['spectra'][shot_index], height=height_threshold)  # Adjust height threshold as needed
+    peak_wavelengths = max_spectra['wave'][shot_index][peaks]
+    peak_counts = max_spectra['spectra'][shot_index][peaks]
+    print(f"Number of peaks found: {len(peaks)}")
+    print(f"Peaks found at indices: {peaks}")
+    print(f"Peak wavelengths: {peak_wavelengths}")
+    print(f"Peak counts: {peak_counts}")
+    
+    # Compare the peak wavelengths with NIST data
+    nist_file_path = os.path.join(path_spectrometer,'OOSpec_Control', 'peaks','ArNIST.txt')  # Adjust path as needed
+    ebs_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'ArEBS_Air.txt')  # Adjust path as needed
 
+    nist_data = load_NIST_data(nist_file_path)
+    ebs_data = load_NIST_data(ebs_file_path)
+    nist_wavelengths = np.array(nist_data['Wavelength'])  # Convert from A to nm
+    ebs_wavelengths = np.array(ebs_data['Wavelength']) # Convert from A to nm
+    nist_species = np.array(nist_data['Species'])
+    ebs_species = np.array(ebs_data['Species'])
+    
+    data = {
+        'Wavelength': np.concatenate((nist_wavelengths, ebs_wavelengths)),
+        'Species': np.concatenate((nist_species, ebs_species)),
+        'Intensity': np.concatenate((nist_data['Intensity'], ebs_data['Intensity'])),
+        'Ref': np.concatenate((nist_data['Ref'], ebs_data['Ref']))
+    }
+    
+    # Compare peaks with NIST data
+    data_spec = compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, data)
+       
+    # Plot the maximum spectrum
+    fig_spec, ax_spec = plt.subplots()
+    for i in range(len(shot_number)):
+        # Plot each maximum spectrum
+        ax_spec.plot(max_spectra['wave'][i], max_spectra['spectra'][i], 
+                     lw=2, label=f'Shot {shot_number[i]}', color='green')
+    
+    # plot the peaks
+    colors = {
+        'Ar I': 'blue',
+        'Ar II': 'red',
+        'Ar III': 'orange',
+        'Ar IV': 'purple',
+    }
+    tolerance = 1.2  # nm tolerance for peak matching
+    for i, key in enumerate(colors.keys()):
+        mask = data_spec[key]['delta'] < tolerance
+        ax_spec.scatter(data_spec[key]['wave'][mask], 
+                        data_spec[key]['counts'][mask], 
+                        label=f'{key} Peaks', marker='x', 
+                        color=colors[key], zorder=i+5,
+                        s=50)
+    ax_spec.legend()
+    ax_spec.set_xlabel(r'$\lambda$ (nm)')
+    ax_spec.set_ylabel('Counts')
+    ax_spec.set_yscale('log')
+    ax_spec.set_xlim(np.min(max_spectra['wave'][0]), np.max(max_spectra['wave'][0]))
+    plt.show()
+    
+    fig_spec.savefig(os.path.join(path_shots, f'{shot_number[shot_index]}_max_spectrum.png'), dpi=300)
+    
+     
+    
+    
