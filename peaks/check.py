@@ -6,7 +6,7 @@ import os
 
 from peaks.load_NIST import load_NIST_data
 from scipy.signal import find_peaks
-from aniplot import load_data, load_shot
+from plots.aniplot import load_data, load_shot
 
 def multimax(data_list):
     """
@@ -42,7 +42,8 @@ def multimax(data_list):
         max_spectrum['time'].append(time_array[max_time_index])
     return max_spectrum
 
-def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data):
+def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
+                            tolerance=1.5):
     """
     Compare the detected peaks with NIST data.
     
@@ -57,16 +58,20 @@ def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data):
     """
     nist_wavelengths = np.array(nist_data['Wavelength']) * 1e-1  # Convert from cm to nm
     nist_species = np.array(nist_data['Species'])
+    nist_intensities = np.array(nist_data['Intensity'])
     
     species = ['Ar I', 'Ar II', 'Ar III', 'Ar IV', 'Ar V', 'Ar VI',
                'Ar VII', 'Ar VIII', 'Ar IX', 'Ar X', 'Ar XI', 'Ar XII',
-               'Ar XIII', 'Ar XIV', 'Ar XV', 'Ar XVI', 'Ar XVII', 'Ar XVIII']
+               'Ar XIII', 'Ar XIV', 'Ar XV', 'Ar XVI', 'Ar XVII', 'Ar XVIII',
+               'N I', 'N II', 'O I', 'O II', 'C I', 'C II', 'Fe I', 'Fe II']
     
     # Check 
     data_spec = {spec: {
         'wave': [],
+        'wave_mes': [],
         'counts': [],
         'delta': [],
+        'intensity': [],
     } for spec in species}
 
     
@@ -77,18 +82,30 @@ def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data):
         # Find closest NIST wavelength
         closest_index = np.argmin(np.abs(nist_wavelengths - peak_wl))
         closest_wl = nist_wavelengths[closest_index]
+        delta = np.abs(closest_wl - peak_wl)
         closest_species = nist_species[closest_index]
+        closest_intensity = nist_intensities[closest_index]
         
-        print(f"Peak wavelength {peak_wl:.2f} nm is closest to NIST wavelength {closest_wl:.2f} nm ({closest_species})")
+        if isinstance(closest_species, np.str_):
+            closest_species = closest_species.strip()
         
-        data_spec[closest_species]['wave'].append(closest_wl)
-        data_spec[closest_species]['counts'].append(peak_count)
-        data_spec[closest_species]['delta'].append(peak_wl - closest_wl)
+        if delta < tolerance:  # nm tolerance for peak matching
+            print(f"Peak wavelength {peak_wl:.2f} nm is closest to NIST wavelength {closest_wl:.2f} nm ({closest_species})")
+            
+            data_spec[closest_species]['wave'].append(closest_wl)
+            data_spec[closest_species]['wave_mes'].append(peak_wl)
+            data_spec[closest_species]['counts'].append(peak_count)
+            data_spec[closest_species]['delta'].append(peak_wl - closest_wl)
+            data_spec[closest_species]['intensity'].append(closest_intensity)
     
         # Convert lists to numpy arrays for easier handling
     for key in data_spec:
         data_spec[key]['wave'] = np.array(data_spec[key]['wave'])
+        data_spec[key]['wave_mes'] = np.array(data_spec[key]['wave_mes'])
         data_spec[key]['counts'] = np.array(data_spec[key]['counts'])
         data_spec[key]['delta'] = np.array(data_spec[key]['delta'])
+        data_spec[key]['intensity'] = np.array(data_spec[key]['intensity'])
+        
+
     
     return data_spec

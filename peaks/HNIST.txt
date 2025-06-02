@@ -1,0 +1,22 @@
+    5            3835.384         H I        RCWM80
+    6            3889.049         H I        RCWM80
+    8            3970.072         H I        RCWM80
+   15            4101.74          H I        RCWM80
+   30    P       4340.462         H I        MK00a
+   30    P       4861.2786        H I        MK00a
+   10    P       4861.2870        H I        MK00a
+   60    P       4861.3615        H I        MK00a
+   90    P       6562.7110        H I        MK00a
+   30    P       6562.7248        H I        MK00a
+  180    P       6562.8518        H I        MK00a
+    5            9545.97          H I        RCWM80
+    7           10049.4           H I        RCWM80
+   12           10938.1           H I        RCWM80
+   20    P      12818.07          H I        MK00a
+   40    P,c    18751.01          H I        MK00a
+    5           21655.3           H I        RCWM80
+    8           26251.5           H I        RCWM80
+   15           40511.6           H I        RCWM80
+    4           46525.1           H I        RCWM80
+    6           74578             H I        RCWM80
+    3          123685             H I        RCWM80
