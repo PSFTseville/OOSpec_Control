@@ -33,11 +33,11 @@
     3           4437.55           He I       M60a
   200           4471.479          He I       M60a
    25           4471.68           He I       M60a
-    4    P,c    4685.3769         He II      MK00b
-    3    P,c    4685.4072         He II      MK00b
-   15*   P,c    4685.7038         He II      MK00b
-   15*   P,c    4685.7044         He II      MK00b
-   12    P,c    4685.8041         He II      MK00b
+    4    P      4685.3769         He II      MK00b
+    3    P      4685.4072         He II      MK00b
+   15*   P      4685.7038         He II      MK00b
+   15*   P      4685.7044         He II      MK00b
+   12    P      4685.8041         He II      MK00b
    30           4713.146          He I       M60a
     4           4713.38           He I       M60a
    20           4921.931          He I       M60a

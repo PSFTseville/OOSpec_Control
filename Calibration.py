@@ -21,7 +21,7 @@ def get_calibration_data(spectra_file):
                 
     return Wavelengths, Counts
 
-def plot_close_lines(ax, peak_mes, peak_tab, color='red'):
+def plot_close_lines(ax, index_mes, peak_mes, peak_tab,color='red'):
     """
     Plot vertical lines for close peaks in the spectrum.
     
@@ -33,6 +33,7 @@ def plot_close_lines(ax, peak_mes, peak_tab, color='red'):
     peaks = {
         'wave': [],
         'wave_mes': [],
+        'index_mes': [],
     }
     for i, wave in enumerate(peak_mes):
         # Check closeness to tabulated peaks
@@ -44,6 +45,7 @@ def plot_close_lines(ax, peak_mes, peak_tab, color='red'):
                         rotation=90, verticalalignment='bottom', color=color, fontsize=8)
                 peaks['wave'].append(close_peak)
                 peaks['wave_mes'].append(wave)
+                peaks['index_mes'].append(index_mes[i])
     peaks['wave'] = np.array(peaks['wave'])
     peaks['wave_mes'] = np.array(peaks['wave_mes'])
     
@@ -97,8 +99,8 @@ if __name__ == "__main__":
     for i, wave in enumerate(He_peaks_wavelengths):
         ax.text(wave, He_peaks_counts[i], f'{wave:.3f} nm', 
                 verticalalignment='bottom', color='red', fontsize=8)
-    close_Hg = plot_close_lines(ax, Hg_peaks_wavelengths, Hg_nist_wavelengths[Hg_nist_intensity > 100], color='blue')
-    close_He = plot_close_lines(ax, He_peaks_wavelengths, He_nist_wavelengths[He_nist_intensity > 100], color='orange')
+    close_Hg = plot_close_lines(ax, Hg_peaks, Hg_peaks_wavelengths, Hg_nist_wavelengths[Hg_nist_intensity > 100], color='blue')
+    close_He = plot_close_lines(ax, He_peaks, He_peaks_wavelengths, He_nist_wavelengths[He_nist_intensity > 100], color='orange')
     ax.set_xlabel(r'$\lambda$ (nm)')
     ax.set_ylabel('Counts')
     ax.set_xlim(np.min(Hg_wavelengths), np.max(Hg_wavelengths))
@@ -106,11 +108,14 @@ if __name__ == "__main__":
     
     wave_mes = np.concatenate((close_Hg['wave_mes'], close_He['wave_mes']))
     wave_tab = np.concatenate((close_Hg['wave'], close_He['wave']))
+    index_mes = np.concatenate((close_Hg['index_mes'], close_He['index_mes']))
     
     # Perform linear regression to find the calibration coefficients
     slope, intercept, r_value, p_value, std_err = linregress(wave_mes, wave_tab)
+    slope_index, intercept_index, r_value_index, p_value_index, std_err_index = linregress(index_mes, wave_tab)
     
     print(f"Calibration slope: {slope:.6f}, intercept: {intercept:.6f}, r_value: {r_value**2:.10f}, p_value: {p_value:.6f}, std_err: {std_err:.6f}")
+    print(f"Calibration slope (index): {slope_index:.6f}, intercept: {intercept_index:.6f}, r_value: {r_value_index**2:.10f}, p_value: {p_value_index:.6f}, std_err: {std_err_index:.6f}")
     
     # Save calibration data to a JSON file
     cal_data = {
@@ -119,8 +124,14 @@ if __name__ == "__main__":
         'r_value': r_value,
         'p_value': p_value,
         'std_err': std_err,
+        'slope_index': slope_index,
+        'intercept_index': intercept_index,
+        'r_value_index': r_value_index,
+        'p_value_index': p_value_index,
+        'std_err_index': std_err_index,
         'wave_mes': wave_mes.tolist(),
         'wave_tab': wave_tab.tolist(),
+        'index_mes': index_mes.tolist(),
     }
     
     cal_file_path = os.path.join(cal_path, 'cal.json')

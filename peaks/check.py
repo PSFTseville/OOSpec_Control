@@ -42,6 +42,40 @@ def multimax(data_list):
         max_spectrum['time'].append(time_array[max_time_index])
     return max_spectrum
 
+def multisum(data_list):
+    """
+    Sum the spectra across multiple data sets.
+    
+    Parameters:
+    - data_list: List of dictionaries containing 'wave', 'spectra', and 'time'.
+    
+    Returns:
+    - summed_spectrum: Summed spectrum for each data sets.
+    """
+    summed_spectrum = {
+        'wave': [],
+        'spectra': [],
+        'time': []
+    }
+    for data in data_list:
+        wavelengths = np.array(data['wave'])
+        spectra = np.array(data['spectra']['2'])
+        time_array = np.array(data['time'])
+
+        # Normalize and align time
+        spectra = spectra - spectra[0, :]
+        spectra = np.clip(spectra, 0, None)
+        time_array = time_array - time_array[0]
+        
+        # Update summed_spectrum
+        summed_spectrum['wave'].append(wavelengths)
+        summed_spectrum['spectra'].append(np.sum(spectra, axis=0))
+        # Get the time point for the summed spectrum
+        summed_time_index = np.argmax(np.sum(spectra, axis=0))
+        summed_spectrum['time'].append(time_array[summed_time_index])
+        
+    return summed_spectrum
+
 def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
                             tolerance=1.5):
     """
@@ -63,7 +97,8 @@ def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
     species = ['Ar I', 'Ar II', 'Ar III', 'Ar IV', 'Ar V', 'Ar VI',
                'Ar VII', 'Ar VIII', 'Ar IX', 'Ar X', 'Ar XI', 'Ar XII',
                'Ar XIII', 'Ar XIV', 'Ar XV', 'Ar XVI', 'Ar XVII', 'Ar XVIII',
-               'N I', 'N II', 'O I', 'O II', 'C I', 'C II', 'Fe I', 'Fe II']
+               'N I', 'N II', 'O I', 'O II', 'C I', 'C II', 'Fe I', 'Fe II',
+               'He I', 'He II']
     
     # Check 
     data_spec = {spec: {

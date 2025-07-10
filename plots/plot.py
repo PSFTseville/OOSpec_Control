@@ -11,10 +11,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from peaks.load_NIST import load_NIST_data
 from scipy.signal import find_peaks
 from plots.aniplot import load_data, load_shot
-from peaks.check import multimax, compare_peaks_with_nist
+from peaks.check import multimax, compare_peaks_with_nist, multisum
 
 def plot_max_spectra(shot_number, path_shots: str, lines_files: list, spec: dict, 
-                     ylim: list=[1e0, 5e5], min_peak: float=1e4, cal=None, **kwargs):
+                     ylim: list=[1e0, 5e5], min_peak: float=1e4, cal=None, 
+                     sum=False, log=True, **kwargs):
     """
     Plot the maximum spectra from a shot file.
 
@@ -31,7 +32,10 @@ def plot_max_spectra(shot_number, path_shots: str, lines_files: list, spec: dict
     data = load_shot(shot_number, path_shots)
     
     # Get the maximum spectrum
-    max_spectra = multimax([data])
+    if sum:
+        max_spectra = multisum([data])
+    else:
+        max_spectra = multimax([data])
     # Recalibrate the wavelengths??
     if cal is not None:
         with open(cal, 'r') as f:
@@ -70,7 +74,7 @@ def plot_max_spectra(shot_number, path_shots: str, lines_files: list, spec: dict
     
     fig, ax = plt.subplots()
     # Plot the maximum spectrum
-    ax.plot(max_spectra['wave'][0], max_spectra['spectra'][0], lw=2, label='Maximum Spectrum', color='black')
+    ax.plot(max_spectra['wave'][0], max_spectra['spectra'][0], lw=2, label='Spectrum', color='black')
     # Set how precise are the peaks
     tolerance = 1.2  # nm tolerance for peak matching
     for i, key in enumerate(spec.keys()):
@@ -78,20 +82,22 @@ def plot_max_spectra(shot_number, path_shots: str, lines_files: list, spec: dict
         mask = abs(data_spec[key]['delta']) < tolerance
         ax.scatter(data_spec[key]['wave'][mask], 
                    data_spec[key]['counts'][mask], 
-                   label=f'{key} Peaks', marker='x', 
+                   label=f'{key}', marker='x', 
                    color=color, zorder=i+5, s=50)
     # Set the legend outside the plot
     ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize='small')
     ax.set_xlabel(r'$\lambda$ (nm)')
     ax.set_ylabel('Counts')
-    ax.set_yscale('log')
+    if log:
+        ax.set_yscale('log')
     ax.set_ylim(ylim[0], ylim[1])
-    ax.set_title('Shot: ' + shot_number + ' - Maximum Spectrum')
+    ax.set_title('Shot: ' + shot_number)
     ax.set_xlim(np.min(max_spectra['wave'][0]), np.max(max_spectra['wave'][0]))
     plt.show()
     
-    fig.savefig(os.path.join(path_shots, 'Plots', f'{shot_number}_max_spectrum.png'), dpi=600, bbox_inches='tight')
-    
+    fig.savefig(os.path.join(path_shots, 'Plots', f'{shot_number}_max_spectrum.png'), dpi=900, bbox_inches='tight')
+    # fig.savefig(os.path.join(path_shots, 'Plots', f'{shot_number}_max_spectrum.svg'), bbox_inches='tight')
+
     return data_spec, max_spectra
 
 
@@ -105,15 +111,20 @@ if __name__ == "__main__":
     N_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'NNIST.txt')  # Adjust path as needed
     O_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'ONIST.txt')  # Adjust path as needed
     C_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'CNIST.txt')  # Adjust path as needed
+    He_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'HeNIST.txt')  # Adjust path as needed
+    Fe_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'FeNIST.txt')  # Adjust path as needed
+    
     # Callibration file paths
     cal_file_path = os.path.join(path_spectrometer, 'OOSpec_Control', 'peaks', 'cal.json')
 
     # Define the colors for each species
     
     colors = {
-        'Ar I': 'blue',
-        'Ar II': 'red',
-        'Ar III': 'orange',
+        'He I': 'blue',
+        'He II': 'red',
+        'Ar I': 'orange',
+        'Ar II': 'yellow',
+        'Ar III': 'purple',
         'N I': 'green',
         'N II': 'purple',
         'O I': 'cyan',
@@ -124,15 +135,15 @@ if __name__ == "__main__":
         'Fe II': 'olive',
     }
 
-    shot_number=["000098", "000099", "000100", "000101", "000102", "000103", "000104", "000105", "000106", "000107", "000108", "000109", "000110",
-                 "000111", "000112"]
-    line_files = [nist_file_path, ebs_file_path, N_file_path, O_file_path, C_file_path]
+    shot_number=["000116", "000117", "000118", "000119", "000120"]
+    line_files = [nist_file_path, ebs_file_path, N_file_path, O_file_path, C_file_path, He_file_path, Fe_file_path]
     data_list = {
     }
     for shot in shot_number:
         data_list[shot] = plot_max_spectra(shot, path_shots, line_files, 
                                            colors, ylim=[1e0, 5e5], 
-                                           min_peak=0.001, cal=cal_file_path)[0]
+                                           min_peak=0.0025, cal=cal_file_path, 
+                                           sum=False, log=True)[0]
     
     
     # ArI = data_list['000110']['Ar I']

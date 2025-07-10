@@ -100,10 +100,10 @@ def animate_spectra(data, shot_number=None, save_path=None, t_min=None, t_max=No
 
 if __name__ == "__main__":
     # Example usage
-    path_spectrometer = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path_spectrometer = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     path_shots = os.path.join(path_spectrometer, 'Shots')
 
-    shot_number="000100"
+    shot_number="000120"
     data = load_shot(shot_number=shot_number, path_shots=path_shots)
     
 
@@ -112,18 +112,28 @@ if __name__ == "__main__":
         data,
         shot_number=shot_number,
         save_path=os.path.join(path_shots, f'{shot_number}_animation.mp4'),
-        t_min=6.7,  # crop start at 0.5 s
-        t_max=7.5   # crop end at 2.0 s
+        t_min=6,  # crop start at 0.5 s
+        t_max=8   # crop end at 2.0 s
     )
     
     wavelengths = np.array(data['wave'])
     spectra = np.array(data['spectra']['2'])
     time_array = np.array(data['time'])
-
-    # Normalize and align time
-    spectra = spectra - spectra[0, :]
-    spectra = np.clip(spectra, 0, None)
+    # align time
     time_array = time_array - time_array[0]
+
+    # Normalize and 
+    t_background = None  # seconds to align the spectra
+    if t_background is not None:
+        # Find the index of the time closest to t_background
+        background_index = np.argmin(np.abs(time_array - t_background))
+        # Subtract the background spectrum
+        spectra = spectra - spectra[background_index, :]
+    else:
+        # If no background subtraction, just normalize
+        spectra = spectra - spectra[0, :]
+        spectra = np.clip(spectra, 0, None)
+    
     
     # Get the maximum spectrum
     max_spectrum = np.max(spectra, axis=0)
