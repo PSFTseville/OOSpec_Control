@@ -45,3 +45,12 @@ class OceanHR(OceanDirectAPI):
                 self.measurement[id].append(self.devs[i].get_formatted_spectrum())
         return self.measurement, self.t_array
     
+    def check_last_shot(self):
+        files = os.listdir(self.path_shot)
+        files = [f for f in files if f.endswith('.json')]
+        if len(files) == 0:
+            return None
+        files.sort()
+        last_file = files[-1]
+        shot_number = last_file.split('.')[0]
+        return shot_number

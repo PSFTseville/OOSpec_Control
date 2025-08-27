@@ -37,6 +37,9 @@ def execute_command(command, OceanHR):
                     }
                     with open(filename, 'w') as f:
                         json.dump(data, f, indent=4)
+        
+        case 'MEAS':
+            pass
                 
         case _:
             print('Invalid command')

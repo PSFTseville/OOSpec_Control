@@ -77,7 +77,7 @@ def multisum(data_list):
     return summed_spectrum
 
 def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
-                            tolerance=1.5):
+                            tolerance=0.1, species=None):
     """
     Compare the detected peaks with NIST data.
     
@@ -94,11 +94,12 @@ def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
     nist_species = np.array(nist_data['Species'])
     nist_intensities = np.array(nist_data['Intensity'])
     
-    species = ['Ar I', 'Ar II', 'Ar III', 'Ar IV', 'Ar V', 'Ar VI',
-               'Ar VII', 'Ar VIII', 'Ar IX', 'Ar X', 'Ar XI', 'Ar XII',
-               'Ar XIII', 'Ar XIV', 'Ar XV', 'Ar XVI', 'Ar XVII', 'Ar XVIII',
-               'N I', 'N II', 'O I', 'O II', 'C I', 'C II', 'Fe I', 'Fe II',
-               'He I', 'He II']
+    if species is None:
+        species = ['Ar I', 'Ar II', 'Ar III', 'Ar IV', 'Ar V', 'Ar VI',
+                'Ar VII', 'Ar VIII', 'Ar IX', 'Ar X', 'Ar XI', 'Ar XII',
+                'Ar XIII', 'Ar XIV', 'Ar XV', 'Ar XVI', 'Ar XVII', 'Ar XVIII',
+                'N I', 'N II', 'O I', 'O II', 'C I', 'C II', 'Fe I', 'Fe II',
+                'He I', 'He II']
     
     # Check 
     data_spec = {spec: {

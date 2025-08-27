@@ -103,7 +103,7 @@ if __name__ == "__main__":
     path_spectrometer = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     path_shots = os.path.join(path_spectrometer, 'Shots')
 
-    shot_number="000120"
+    shot_number="000160"
     data = load_shot(shot_number=shot_number, path_shots=path_shots)
     
 

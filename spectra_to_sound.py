@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # Example usage of the code
     print("This script is designed to load and process spectra data for sound generation.")
     print("Please ensure you have the necessary data files available.")
-    shots = ['000117']
+    shots = ['000210']
     # Define the path to the shots directory
     path_current = os.path.dirname(os.path.abspath(__file__))
     path_shots = os.path.join(os.path.dirname(path_current), 'Shots')
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         spectra = np.array(data['spectra']['2'])
         spectra = spectra - spectra[0, :]  # Subtract the first frame as background noise
         
-        audio = spectra_to_audio(spectra[420:480, ::-1], sample_rate=44100, duration_per_frame=0.02)
+        audio = spectra_to_audio(spectra[420:480, ::-1], sample_rate=44100, duration_per_frame=0.04)
         
         output_path = os.path.join(path_shots, 'Audio','{}_audio.wav'.format(shot))
         # Save the audio file
