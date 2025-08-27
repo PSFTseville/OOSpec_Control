@@ -39,7 +39,24 @@ def execute_command(command, OceanHR):
                         json.dump(data, f, indent=4)
         
         case 'MEAS':
-            pass
+            print(f'Current Shot: {OceanHR.next_shot:06d}')
+            filename = os.path.join(OceanHR.path_shot, f'{OceanHR.next_shot:06d}.json')
+            
+            if len(command)>1:
+                print(f'Measuring for {command[1]} frames') 
+                OceanHR.measure(int(command[1]))
+            else:
+                print(f'Measuring for 750 frames')
+                OceanHR.measure()
+            
+            data = {
+                'wave': OceanHR.devs[0].get_wavelengths(),
+                'spectra': OceanHR.measurement,
+                'time': OceanHR.t_array,
+            }
+            with open(filename, 'w') as f:
+                json.dump(data, f, indent=4)
+
                 
         case _:
             print('Invalid command')

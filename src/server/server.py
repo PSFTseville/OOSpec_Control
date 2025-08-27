@@ -29,13 +29,13 @@ class OHRServer(socket.socket):
         
 
     
-    def run(self):
+    def run(self, **kwargs):
 
         while True:
             client_socket, client_address = self.accept()
             print(f'Connection stablished with {client_address}')
 
-            OHR = OceanHR()
+            OHR = OceanHR(**kwargs)
 
             while True:
 
@@ -47,7 +47,7 @@ class OHRServer(socket.socket):
 
                 command = decompose_command(command)
 
-                data = execute_command(command)
+                execute_command(command, OHR)
 
 
 
