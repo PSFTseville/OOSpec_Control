@@ -21,7 +21,7 @@ def get_calibration_data(spectra_file):
                 
     return Wavelengths, Counts
 
-def plot_close_lines(ax, index_mes, peak_mes, peak_tab,color='red'):
+def plot_close_lines(ax, index_mes, peak_mes, peak_tab,color='red', text=False):
     """
     Plot vertical lines for close peaks in the spectrum.
     
@@ -41,8 +41,9 @@ def plot_close_lines(ax, index_mes, peak_mes, peak_tab,color='red'):
         if close_peaks:
             for close_peak in close_peaks:
                 ax.axvline(close_peak, color=color, linestyle='--', linewidth=0.5)
-                ax.text(close_peak, 50000, f'{close_peak:.3f} nm', 
-                        rotation=90, verticalalignment='bottom', color=color, fontsize=8)
+                if text:
+                    ax.text(close_peak, 50000, f'{close_peak:.3f} nm', 
+                            rotation=90, verticalalignment='bottom', color=color, fontsize=8)
                 peaks['wave'].append(close_peak)
                 peaks['wave_mes'].append(wave)
                 peaks['index_mes'].append(index_mes[i])
@@ -60,6 +61,8 @@ if __name__ == "__main__":
     from scipy.stats import linregress
     
     from  peaks.load_NIST import load_NIST_data
+    plt.rcParams.update({'font.size': 18, 'lines.linewidth': 3})
+
 
 
     path = os.path.dirname(os.path.abspath(__file__))
@@ -80,31 +83,49 @@ if __name__ == "__main__":
     He_nist_intensity = np.array(He_nist_data['Intensity'])
 
     # Find peaks in the Mercury and Helium spectra
-    Hg_peaks, _ = find_peaks(Hg_counts, height=0.1 * np.max(Hg_counts), distance=15)
-    He_peaks, _ = find_peaks(He_counts, height=0.1 * np.max(He_counts), distance=15)
+    Hg_peaks, _ = find_peaks(Hg_counts, height=0.05 * np.max(Hg_counts), distance=15)
+    He_peaks, _ = find_peaks(He_counts, height=0.05 * np.max(He_counts), distance=15)
     He_peaks_wavelengths = np.array(He_wavelengths)[He_peaks]
     Hg_peaks_wavelengths = np.array(Hg_wavelengths)[Hg_peaks]
     He_peaks_counts = np.array(He_counts)[He_peaks]
     Hg_peaks_counts = np.array(Hg_counts)[Hg_peaks]
 
     # Plot the calibration spectra
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(7.5, 3.7))
     ax.plot(Hg_wavelengths, Hg_counts, label='Mercury Calibration', color='blue')
     ax.plot(He_wavelengths, He_counts, label='Helium Calibration', color='orange')
     ax.scatter(Hg_peaks_wavelengths, Hg_peaks_counts, color='blue', marker='o', label='Hg Peaks')
-    for i, wave in enumerate(Hg_peaks_wavelengths):
-        ax.text(wave, Hg_peaks_counts[i], f'{wave:.3f} nm', 
-                verticalalignment='bottom', color='red', fontsize=8)
+    # for i, wave in enumerate(Hg_peaks_wavelengths):
+    #     # white background for text
+    #     ax.text(wave, Hg_peaks_counts[i], f'{wave:.3f} nm', 
+    #             verticalalignment='bottom', color='red', fontsize=12, backgroundcolor='white')
     ax.scatter(He_peaks_wavelengths, He_peaks_counts, color='orange', marker='o', label='He Peaks')
-    for i, wave in enumerate(He_peaks_wavelengths):
-        ax.text(wave, He_peaks_counts[i], f'{wave:.3f} nm', 
-                verticalalignment='bottom', color='red', fontsize=8)
-    close_Hg = plot_close_lines(ax, Hg_peaks, Hg_peaks_wavelengths, Hg_nist_wavelengths[Hg_nist_intensity > 100], color='blue')
-    close_He = plot_close_lines(ax, He_peaks, He_peaks_wavelengths, He_nist_wavelengths[He_nist_intensity > 100], color='orange')
+    # for i, wave in enumerate(He_peaks_wavelengths):
+    #     ax.text(wave, He_peaks_counts[i], f'{wave:.3f} nm', 
+    #             verticalalignment='bottom', color='red', fontsize=12, backgroundcolor='white')
+    close_Hg = plot_close_lines(ax, Hg_peaks, Hg_peaks_wavelengths, Hg_nist_wavelengths[Hg_nist_intensity > 5], color='blue')
+    close_He = plot_close_lines(ax, He_peaks, He_peaks_wavelengths, He_nist_wavelengths[He_nist_intensity > 5], color='orange')
     ax.set_xlabel(r'$\lambda$ (nm)')
     ax.set_ylabel('Counts')
+    ax.set_yscale('log')
+    ax.set_ylim(1e3, 3e5)
     ax.set_xlim(np.min(Hg_wavelengths), np.max(Hg_wavelengths))
-    ax.set_title('Calibration Spectra for Mercury and Helium')
+    # ax.set_title('Calibration Spectra for Mercury and Helium')
+    
+    # custom legend 
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], color='blue', lw=3, label='Mercury Calibration'),
+        Line2D([0], [0], color='orange', lw=3, label='Helium Calibration'),
+        Line2D([0], [0], marker='o', color='black', label='Detected Peaks', linestyle='None'),
+        Line2D([0], [0], color='black', lw=0.5, linestyle='--', label='Close NIST Lines'),
+    ]
+    # put legend down outside the plot in two columns
+    ax.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+    plt.tight_layout()
+    plt.show()
+    
+    fig.savefig(os.path.join(cal_path, 'calibration_spectra.svg'), format='svg')
     
     wave_mes = np.concatenate((close_Hg['wave_mes'], close_He['wave_mes']))
     wave_tab = np.concatenate((close_Hg['wave'], close_He['wave']))

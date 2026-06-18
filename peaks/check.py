@@ -77,7 +77,7 @@ def multisum(data_list):
     return summed_spectrum
 
 def compare_peaks_with_nist(peaks, peak_wavelengths, peak_counts, nist_data,
-                            tolerance=0.1, species=None):
+                            tolerance=2, species=None):
     """
     Compare the detected peaks with NIST data.
     
